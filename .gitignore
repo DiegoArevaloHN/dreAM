@@ -5,3 +5,4 @@ _site/
 vendor/
 .preview/
 .claude/settings.local.json
+__pycache__/

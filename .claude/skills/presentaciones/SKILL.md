@@ -48,30 +48,35 @@ Contenido en Markdown.
 
 ## Estrategia de fechas recomendada
 
-Para un deck nuevo, usa una base antigua y días consecutivos. Deja siempre
-`0000-01-01` para la portada si quieres que vaya primera:
+Para un deck nuevo, usa una base antigua y **saltos de 10 días**, para que
+siempre quede hueco donde intercalar. Deja `0000-01-01` para la portada si
+quieres que vaya primera:
 
 ```
 0000-01-01-portada.md
 0001-01-01-contexto.md
-0001-01-02-problema.md
-0001-01-03-solucion.md
-0001-01-04-datos.md
-0001-01-05-cierre.md
+0001-01-11-problema.md
+0001-01-21-solucion.md
+0001-01-31-datos.md
+0001-02-10-cierre.md
 ```
 
-Para **insertar** entre `0001-01-02` y `0001-01-03`, no hay hueco de días: usa
-horas en el front matter con la clave `date`, que gana a la del nombre:
+Para **insertar** entre dos diapositivas, usa una fecha intermedia libre
+(entre `0001-01-11` y `0001-01-21` caben nueve). Si no queda hueco, renumera
+las siguientes: las fechas solo ordenan, no se muestran, así que renumerar no
+cuesta nada.
 
-```yaml
----
-layout: slide
-title: "Diapositiva intercalada"
-date: 0001-01-02 12:00:00
----
-```
-
-O bien renumera el deck completo con saltos de 10 días para dejar hueco.
+> ⚠️ **No uses la clave `date:` del front matter para intercalar.** Es cierto
+> que gana a la fecha del nombre, pero con el esquema de años `0001` que usa
+> este deck Jekyll resuelve mal esas fechas: la `timezone: Europe/Berlin` de
+> `_config.yml` arrastra el desfase horario histórico (+00:53) y el salto
+> juliano/gregoriano, de modo que `date: 0001-01-02 12:00` aterriza en
+> `0000-12-31` y la diapositiva **salta al principio del deck**. Comprobado
+> ejecutando el build. Con años modernos sí funciona, pero no es el caso aquí.
+>
+> Además, dos archivos con el mismo prefijo `AAAA-MM-DD` los rechazan el hook
+> y el CI, así que el archivo intercalado necesita igualmente una fecha libre
+> en el nombre.
 
 ## Front matter soportado
 
@@ -84,7 +89,7 @@ Definido por `_includes/slide.html`:
 | `slide-id: mi-ancla` | Pone `id="mi-ancla"` en la `<section>`, para enlazar directo. |
 | `classes: [a, b]` | Añade clases CSS a la `<section>`. Sin esta clave se usa `slide`. |
 | `data: {clave: valor}` | Se convierte en atributos `data-clave="valor"` de reveal.js. |
-| `date: ...` | Sobrescribe la fecha del nombre; sirve para ordenar con precisión. |
+| `date: ...` | Sobrescribe la fecha del nombre. **Evítala** (ver el aviso de arriba): con años `0001` ordena mal, y si es futura la diapositiva desaparece. |
 
 Ejemplos útiles de `data` en reveal.js 3.x:
 
@@ -98,26 +103,46 @@ data:
 
 ## Configuración global de la presentación
 
-En `_config.yml`:
+> ⚠️ **Gran parte del bloque `reveal:` de `_config.yml` no lo lee nadie.**
+> `_includes/script.html` llama a `Reveal.initialize({ hash: true, dependencies: [...] })`
+> con valores escritos a mano y no consulta ninguna variable del sitio
+> (`grep -rn 'site\.reveal'` no devuelve nada). Las ~60 líneas de opciones
+> (`transition`, `progress`, `center`, `width`, `height`, `controls`) y el
+> bloque `slideNumber:` **son inertes**: editarlos no cambia nada, el build
+> pasa y el resultado es idéntico.
 
-- `title`, `author`, `description`: metadatos del deck.
-- `solarized.theme`: `dark` o `light` (clase del `<html>`).
-- `reveal.*`: opciones de reveal.js (`transition`, `progress`, `center`,
-  `width`, `height`, `controls`, `slideNumber`…).
-- El **tema visual** de reveal.js está fijado en `_includes/head.html`
-  (`css/theme/moon.css`). Los temas disponibles están en
-  `node_modules/reveal.js/css/theme/`: `beige`, `black`, `blood`, `league`,
-  `moon`, `night`, `serif`, `simple`, `sky`, `solarized`, `white`.
+Lo que sí tiene efecto:
 
-Para cambiar de tema, edita esa línea de `head.html` y verifica el resultado con
+| Dónde | Qué controla |
+|---|---|
+| `_config.yml` → `title` | El `<title>` de la pestaña del navegador (vía `_includes/head.html`). |
+| `_config.yml` → `timezone` | Qué cuenta como "fecha futura" para `future: false`. |
+| `_includes/head.html` | El **tema visual**. Hoy `css/theme/moon.css`. Disponibles en `node_modules/reveal.js/css/theme/`: `beige`, `black`, `blood`, `league`, `moon`, `night`, `serif`, `simple`, `sky`, `solarized`, `white`. |
+| `_includes/script.html` | Transición, centrado, tamaño, barra de progreso: **aquí**, no en `_config.yml`. |
+| Front matter `data:` de cada diapositiva | Fondo y transición **por diapositiva**. Esto sí funciona. |
+
+`author` y `description` de `_config.yml` no se renderizan en ningún sitio.
+`solarized.theme` solo pone `class="dark"` en el `<html>`, y el tema `moon` no
+define ninguna regla para esa clase: cambiarlo no se nota.
+
+Al tocar el tema o `script.html`, verifica el resultado con
 `script/screenshots` — no supongas cómo queda, míralo.
+
+### Opciones que rompen cosas en silencio
+
+- `simple-slideshow: true` en `_config.yml` hace que `_includes/slide.html`
+  **deje de emitir todos los atributos `data:`** de todas las diapositivas.
+- `overview: true` añade una `<section id="overview">` extra al final.
 
 ## Buenas prácticas de contenido
 
 - Una idea por diapositiva. Si dudas, divide.
 - ~40 palabras máximo de cuerpo; 6 viñetas máximo.
 - Títulos que afirmen algo, no etiquetas ("Ventas +18% en Q3", no "Ventas").
-- Toda imagen con `alt` descriptivo: sin él, `script/cibuild` falla.
+- Toda imagen con `alt` descriptivo. **Ojo: el build NO lo comprueba** —
+  `script/cibuild` pasa `--ignore-empty-alt`, y kramdown emite `alt=""` cuando
+  no escribes nada. Es responsabilidad de quien escribe y del agente
+  `deck-reviewer`.
 - Los enlaces deben decir a dónde llevan; nada de "aquí".
 - Bloques de código: solo el fragmento relevante, ~12 líneas máximo.
 - Portada al principio, conclusión o llamada a la acción al final.
@@ -125,22 +150,30 @@ Para cambiar de tema, edita esa línea de `head.html` y verifica el resultado co
 ## Flujo de trabajo completo
 
 ```sh
-export BUNDLE_PATH=vendor/bundle BUNDLER_VERSION=2.5.22 LANG=C.UTF-8 LC_ALL=C.UTF-8
+export BUNDLE_PATH=vendor/bundle LANG=C.UTF-8 LC_ALL=C.UTF-8
 
 # 1. Escribir o editar archivos en _posts/
 # 2. Compilar y validar
 script/cibuild
 
 # 3. Comprobar que TODAS las diapositivas se publicaron
-ls _posts/ | wc -l
-grep -c '<section' _site/index.html   # debe coincidir
+find _posts -type f | wc -l
+grep -o 'class="page-break"' _site/index.html | wc -l   # debe coincidir
 
 # 4. Ver el resultado
 script/screenshots                    # PNG por diapositiva en .preview/
 ```
 
+> No cuentes `<section`: lo emiten también la sección `overview` opcional y
+> cualquier HTML suelto dentro de una diapositiva, así que infla el recuento.
+> `class="page-break"` sale exactamente una vez por diapositiva.
+
 Si los dos números del paso 3 no coinciden, hay una diapositiva que no se
-publica: revisa fechas futuras y `layout: slide`.
+publica. Por orden de probabilidad:
+
+1. Fecha futura, **en el nombre o en la clave `date:` del front matter**.
+2. Falta `layout: slide`.
+3. El nombre no sigue el formato `AAAA-MM-DD-slug.md`.
 
 ## Publicación
 
@@ -153,4 +186,5 @@ rama de trabajo → commit → push → Pull Request → fusión a `master`. El 
 - `node_modules/` — reveal.js viene commiteado; se actualiza vía npm, no a mano.
 - `_site/` — salida generada, está en `.gitignore`.
 - `vendor/` y `.preview/` — locales, ignorados por git.
-- `Gemfile.lock` — solo si el problema es la resolución de gemas, y explicándolo.
+- `Gemfile.lock` — protegido por una regla `deny` en `.claude/settings.json`.
+  Si hace falta regenerarlo, pídeselo al usuario y explica por qué.

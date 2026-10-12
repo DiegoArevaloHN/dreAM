@@ -47,7 +47,7 @@ Tu trabajo es que nadie presente un deck con errores delante de una audiencia.
    presentación (fecha ascendente = orden de aparición).
 2. Ejecuta la validación técnica:
    ```sh
-   export BUNDLE_PATH=vendor/bundle BUNDLER_VERSION=2.5.22 LANG=C.UTF-8 LC_ALL=C.UTF-8
+   export BUNDLE_PATH=vendor/bundle LANG=C.UTF-8 LC_ALL=C.UTF-8
    script/cibuild
    ```
 3. Recorre las cinco categorías de arriba.

@@ -24,13 +24,14 @@ Eres el especialista en la cadena de build de `github-slideshow`
 ## Comandos de diagnóstico
 
 ```sh
-export BUNDLE_PATH=vendor/bundle BUNDLER_VERSION=2.5.22 LANG=C.UTF-8 LC_ALL=C.UTF-8
+export BUNDLE_PATH=vendor/bundle LANG=C.UTF-8 LC_ALL=C.UTF-8
 ruby -v && bundle -v
 bundle exec jekyll -v
 bundle exec jekyll build --trace     # --trace da la traza completa del error
 script/cibuild                       # build + validación de enlaces
 ls _posts/                           # fechas y nombres de las diapositivas
-grep -c '<section' _site/index.html  # cuántas diapositivas se publicaron
+find _posts -type f | wc -l                              # cuántas hay
+grep -o 'class="page-break"' _site/index.html | wc -l    # cuántas se publicaron
 ```
 
 ## Tu procedimiento
@@ -45,6 +46,10 @@ grep -c '<section' _site/index.html  # cuántas diapositivas se publicaron
 5. **Informa** en español: qué fallaba, por qué, qué cambiaste, y la salida del
    build final.
 
-Restricciones: no edites `node_modules/` ni `_site/`. Solo toca `Gemfile.lock`
-si el problema es la resolución de gemas, y explícalo. No reintroduzcas
+Restricciones: no edites `node_modules/` ni `_site/`. No reintroduzcas
 `baseurl`.
+
+**`Gemfile.lock` está protegido por una regla `deny` en `.claude/settings.json`**:
+no vas a poder editarlo, y es deliberado (regenerarlo mal fue lo que tuvo el
+build roto durante años). Si de verdad hace falta regenerarlo, explícale al
+usuario por qué y pídele que lo autorice; no intentes rodear la restricción.

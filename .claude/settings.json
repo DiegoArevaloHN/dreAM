@@ -2,11 +2,9 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
     "BUNDLE_PATH": "vendor/bundle",
-    "BUNDLER_VERSION": "2.5.22",
     "LANG": "C.UTF-8",
     "LC_ALL": "C.UTF-8",
-    "JEKYLL_ENV": "development",
-    "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
+    "JEKYLL_ENV": "development"
   },
   "permissions": {
     "allow": [
@@ -18,6 +16,10 @@
       "Bash(bundle list:*)",
       "Bash(bundle -v)",
       "Bash(script/cibuild)",
+      "Bash(script/screenshots)",
+      "Bash(script/screenshots:*)",
+      "Bash(script/setup)",
+      "Bash(script/server:*)",
       "Bash(npm ci:*)",
       "Bash(npm install:*)",
       "Bash(ruby -v)",
@@ -33,6 +35,9 @@
       "Bash(git checkout:*)",
       "Bash(git switch:*)",
       "Bash(git ls-files:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr checks:*)",
       "Bash(ls:*)",
       "Bash(find:*)",
       "Bash(wc:*)",
@@ -40,31 +45,32 @@
       "Bash(tail:*)",
       "Bash(curl -sS http://localhost:4000/*)",
       "Bash(.claude/hooks/session-start.sh)",
-      "Read(//home/user/github-slideshow/**)",
-      "Edit(//home/user/github-slideshow/_posts/**)",
-      "Edit(//home/user/github-slideshow/_layouts/**)",
-      "Edit(//home/user/github-slideshow/_includes/**)",
-      "Edit(//home/user/github-slideshow/_config.yml)",
-      "Write(//home/user/github-slideshow/_posts/**)"
+      "Read(/**)",
+      "Edit(/_posts/**)",
+      "Edit(/_layouts/**)",
+      "Edit(/_includes/**)",
+      "Edit(/_config.yml)"
     ],
     "ask": [
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)"
     ],
     "deny": [
-      "Read(//home/user/github-slideshow/.env)",
-      "Read(//home/user/github-slideshow/.env.*)",
-      "Edit(//home/user/github-slideshow/Gemfile.lock)",
-      "Edit(//home/user/github-slideshow/node_modules/**)",
-      "Edit(//home/user/github-slideshow/_site/**)",
+      "Read(/.env)",
+      "Read(/.env.*)",
+      "Edit(/Gemfile.lock)",
+      "Edit(/node_modules/**)",
+      "Edit(/_site/**)",
       "Bash(git push --force:*)",
       "Bash(git push -f:*)",
-      "Bash(rm -rf /*)"
+      "Bash(git push * --force*)",
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)"
     ]
   },
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|resume|clear",
         "hooks": [
           {
             "type": "command",

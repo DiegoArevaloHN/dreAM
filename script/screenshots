@@ -50,7 +50,15 @@ bundle exec jekyll build --quiet || {
   exit 1
 }
 
-SLIDES=$(grep -c '<section' _site/index.html || echo 0)
+# Contamos el marcador que index.html emite exactamente una vez por
+# diapositiva. Contar '<section' es frágil: lo emiten también la sección
+# `overview` opcional y cualquier HTML suelto que alguien escriba dentro de una
+# diapositiva, y entonces el recuento sale inflado.
+#
+# Ojo con `grep -c ... || echo 0`: cuando no hay coincidencias grep YA imprime
+# "0" y además sale con 1, así que el `|| echo 0` añadía un segundo 0 y la
+# variable acababa valiendo "0\n0", que rompe toda comparación numérica.
+SLIDES=$(grep -c 'class="page-break"' _site/index.html) || SLIDES=0
 if [ "$SLIDES" -lt 1 ]; then
   echo "ERROR: el sitio no tiene diapositivas." >&2
   exit 1
@@ -60,19 +68,44 @@ echo "==> $SLIDES diapositivas detectadas."
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
+PROFILE=""
+SERVER_PID=""
+cleanup() {
+  [ -n "$SERVER_PID" ] && kill "$SERVER_PID" 2>/dev/null
+  [ -n "$PROFILE" ] && rm -rf "$PROFILE"
+  return 0
+}
+trap cleanup EXIT INT TERM
+
 echo "==> Sirviendo _site en el puerto $PORT..."
 python3 -m http.server "$PORT" --directory _site --bind 127.0.0.1 >/dev/null 2>&1 &
 SERVER_PID=$!
-cleanup() { kill "$SERVER_PID" 2>/dev/null; }
-trap cleanup EXIT
 
-# Espera a que el servidor responda.
+# Esperamos a NUESTRO servidor, y comprobamos que de verdad es el nuestro.
+#
+# Que el puerto responda no basta: si ya estaba ocupado, python muere al
+# instante con "Address already in use" y fotografiaríamos el sitio de otro
+# proceso sin enterarnos. Y mirar el PID tampoco sirve: `kill -0` devuelve
+# éxito también para un proceso zombi, así que el hijo muerto parece vivo.
+#
+# Lo único fiable es pedir la página y reconocerla: index.html emite un
+# `class="page-break"` por diapositiva, y ninguna otra cosa que pueda estar
+# escuchando en ese puerto lo tendrá.
+servidor_ok=0
 for _ in $(seq 1 40); do
-  if curl -sSf -o /dev/null "http://127.0.0.1:$PORT/" 2>/dev/null; then
+  if curl -sSf "http://127.0.0.1:$PORT/index.html" 2>/dev/null \
+     | grep -q 'class="page-break"'; then
+    servidor_ok=1
     break
   fi
   sleep 0.25
 done
+if [ "$servidor_ok" -ne 1 ]; then
+  echo "ERROR: en el puerto $PORT no responde esta presentación." >&2
+  echo "       Lo más probable: ese puerto ya está ocupado por otro programa." >&2
+  echo "       Prueba con otro:  PREVIEW_PORT=4322 script/screenshots" >&2
+  exit 1
+fi
 
 PROFILE="$(mktemp -d)"
 
@@ -123,7 +156,8 @@ while [ "$index" -lt "$SLIDES" ]; do
   fi
   index=$((index + 1))
 done
-rm -rf "$PROFILE"
+# El perfil temporal y el servidor los limpia `cleanup` en el trap, que también
+# cubre Ctrl-C y SIGTERM a mitad de ejecución.
 
 echo "==> Listo: $capturadas de $SLIDES imágenes en $OUT/"
 

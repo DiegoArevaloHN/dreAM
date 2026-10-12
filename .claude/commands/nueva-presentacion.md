@@ -1,7 +1,7 @@
 ---
 description: Crea una presentación completa desde cero sobre un tema
 argument-hint: <tema de la presentación> [| en N diapositivas]
-allowed-tools: Task, Read, Write, Edit, Glob, Grep, Bash
+allowed-tools: Agent, Read, Write, Edit, Glob, Grep, Bash
 ---
 
 Crea una presentación completa sobre: **$ARGUMENTS**

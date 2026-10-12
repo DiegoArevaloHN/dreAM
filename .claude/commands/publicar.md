@@ -1,7 +1,7 @@
 ---
 description: Verifica, guarda y publica los cambios en GitHub con un Pull Request
 argument-hint: [descripción breve del cambio]
-allowed-tools: Read, Glob, Grep, Bash, Task
+allowed-tools: Read, Glob, Grep, Bash, Agent
 ---
 
 Publica los cambios actuales. Descripción dada por el usuario: **$ARGUMENTS**

@@ -37,11 +37,30 @@ _includes/
   slide.html         # plantilla de cada <section class="step">
   script.html        # Reveal.initialize() y plugins
 index.html         # arma la presentación iterando los posts
-_config.yml         # título, autor, tema, opciones de reveal.js
+_config.yml         # título, zona horaria, exclusiones (ojo: ver aviso abajo)
 script/cibuild     # build + validación de enlaces (html-proofer)
+script/screenshots # un PNG por diapositiva (vista previa visual)
 script/server      # servidor local de desarrollo
+script/setup       # instala las gemas (lo hace también el hook de arranque)
 node_modules/reveal.js  # reveal.js commiteado vía package-lock.json
 ```
+
+### Aviso: medio `_config.yml` no lo lee nadie
+
+El bloque `reveal:` (~60 líneas: `transition`, `progress`, `center`, `width`,
+`height`, `controls`) y el bloque `slideNumber:` **son inertes**.
+`_includes/script.html` llama a `Reveal.initialize()` con valores escritos a
+mano y no consulta ninguna variable del sitio (`grep -rn 'site\.reveal'` no
+devuelve nada). Si alguien pide "cambia la transición" y editas `_config.yml`,
+el build pasará y no cambiará absolutamente nada.
+
+- Transición, centrado, tamaño, barra de progreso → `_includes/script.html`.
+- Tema visual → `_includes/head.html` (hoy `moon.css`).
+- Fondo y transición **por diapositiva** → front matter `data:` (esto sí va).
+- `author` y `description` de `_config.yml` no se renderizan en ningún sitio.
+
+Lo que de `_config.yml` sí tiene efecto: `title` (la pestaña del navegador),
+`timezone` (qué cuenta como fecha futura), `exclude` y `future: false`.
 
 ## Cómo se escribe una diapositiva
 
@@ -63,8 +82,11 @@ Reglas que **no** son obvias y hay que respetar:
   aparece primero. La portada actual es `0000-01-01-intro.md`.
 - **`_config.yml` tiene `future: false`.** Una diapositiva con fecha futura
   **no se publica**. Nunca uses fechas posteriores a hoy.
-- Para insertar una diapositiva entre dos existentes, usa una fecha intermedia
-  (las fechas son solo para ordenar, no se muestran).
+- Para insertar una diapositiva entre dos existentes, usa una **fecha
+  intermedia libre** en el nombre (las fechas solo ordenan, no se muestran). Si
+  no queda hueco, renumera las siguientes con saltos de 10 días. **No uses la
+  clave `date:` del front matter para esto**: con el esquema de años `0001` de
+  este deck, Jekyll la resuelve mal y la diapositiva salta al principio.
 - `layout: slide` es obligatorio en el front matter.
 - `title: ""` (vacío) oculta el encabezado `<h1>`.
 
@@ -94,8 +116,13 @@ Ejecuta siempre desde la raíz del repositorio.
 Variables de entorno necesarias (ya fijadas en `.claude/settings.json`):
 
 ```sh
-export BUNDLE_PATH=vendor/bundle BUNDLER_VERSION=2.5.22 LANG=C.UTF-8 LC_ALL=C.UTF-8
+export BUNDLE_PATH=vendor/bundle LANG=C.UTF-8 LC_ALL=C.UTF-8
 ```
+
+No fijes `BUNDLER_VERSION`. El `Gemfile.lock` ya declara `BUNDLED WITH 2.5.22`
+y Bundler activa esa versión solo. Clavarla en el entorno hacía que, en una
+máquina sin esa versión exacta, el hook de arranque eligiera otra con éxito y
+luego cada `bundle exec` fallara con `Could not find 'bundler' (2.5.22)`.
 
 ### Decisiones de la cadena de build — no las revientes
 
@@ -112,8 +139,22 @@ export BUNDLE_PATH=vendor/bundle BUNDLER_VERSION=2.5.22 LANG=C.UTF-8 LC_ALL=C.UT
   vamos a arreglar; validamos nuestras páginas. No amplíes ese `--ignore-files`
   a nuestros archivos.
 - **Verificación clave:** el número de archivos en `_posts/` debe coincidir con
-  el número de `<section>` en `_site/index.html`. Si no coincide, hay una
-  diapositiva que no se publica (casi siempre por fecha futura).
+  el de `class="page-break"` en `_site/index.html`:
+
+  ```sh
+  find _posts -type f | wc -l
+  grep -o 'class="page-break"' _site/index.html | wc -l
+  ```
+
+  No cuentes `<section`: lo emiten también la sección `overview` opcional y
+  cualquier HTML suelto escrito dentro de una diapositiva, así que infla el
+  recuento. Si los números no coinciden, hay una diapositiva que no se publica
+  (casi siempre por una fecha futura, en el nombre o en `date:`).
+
+- **`script/cibuild` verifica su propio locale.** Con `LANG`/`LC_ALL` que no
+  sean UTF-8, html-proofer se salta los archivos con acentos **y aun así
+  termina con éxito**. El script lo detecta y lo corrige, y además falla si
+  html-proofer informa de "Ran on 0 files". No quites esas dos guardas.
 
 Las gemas se instalan en `vendor/bundle` (ignorado por git).
 
@@ -122,9 +163,12 @@ Las gemas se instalan en `vendor/bundle` (ignorado por git).
 - **`SessionStart`** → `.claude/hooks/session-start.sh`: prepara Ruby, Bundler y
   las gemas al abrir la sesión. Es idempotente y nunca aborta la sesión.
 - **`PostToolUse` (Edit|Write)** → `.claude/hooks/check-slide.py`: cada vez que
-  creas o editas un archivo de `_posts/`, valida nombre, fecha (no futura, no
-  duplicada) y front matter. Si algo está mal, te lo devuelve para corregirlo en
-  el momento.
+  creas o editas un archivo de `_posts/`, valida el nombre, la fecha del nombre
+  (no futura, no duplicada), **la clave `date:` del front matter** (gana a la
+  del nombre, así que una fecha futura ahí esconde la diapositiva igual de
+  silenciosamente) y que haya `layout: slide` y `title:`. Usa la zona horaria
+  declarada en `_config.yml`, que es la que Jekyll aplica a `future: false`.
+  Si algo está mal, te lo devuelve para corregirlo en el momento.
 - **GitHub Actions** (`.github/workflows/ci.yml`): compila, valida enlaces,
   comprueba que todas las diapositivas se publiquen y revisa las fechas.
 

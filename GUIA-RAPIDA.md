@@ -50,9 +50,11 @@ También funciona. Claude reconoce la intención y usa las herramientas correcta
 - "hazme una presentación de 8 diapositivas sobre X"
 - "el sitio no funciona, arréglalo"
 - "muéstrame cómo se ven las diapositivas"
+- "ábreme la presentación en el navegador" *(la levanta en `localhost:4000`)*
 - "cambia el tema de la presentación a algo más claro"
 - "revisa la presentación antes de que la muestre mañana"
 - "mueve la diapositiva de precios al final"
+- "falta una diapositiva, revisa las fechas"
 
 ---
 
@@ -74,9 +76,12 @@ uno directamente, nómbralo.
 
 ## Las dos reglas que evitan el 90% de los problemas
 
-1. **Nunca pongas una fecha futura en una diapositiva.** El sistema las oculta
-   sin avisar. Claude ya lo vigila automáticamente, pero si algo "desaparece",
-   esta es la causa.
+1. **Si una diapositiva que pediste no aparece, casi siempre es la fecha.**
+   Cada diapositiva lleva una fecha interna que tú nunca ves; si queda por
+   delante de hoy, el sistema la esconde sin avisar. No tienes que entenderlo:
+   solo escribe **"falta una diapositiva, revisa las fechas"** y Claude lo
+   arregla. (Hay validaciones automáticas que lo cazan al crearla, pero esta es
+   la señal por si alguna se escapa.)
 
 2. **Ejecuta `/verificar` antes de `/publicar`.** Es la diferencia entre
    descubrir un error tú o descubrirlo tu audiencia.
@@ -85,12 +90,32 @@ uno directamente, nómbralo.
 
 ## Qué pasa cuando publicas
 
-`/publicar` **no** cambia el sitio público de inmediato. Crea un Pull Request:
-una propuesta de cambio que tú revisas y apruebas. La presentación se actualiza
-en la web solo cuando ese Pull Request se fusiona a la rama `master`.
+`/publicar` **no** cambia el sitio público de inmediato. Crea un *Pull Request*:
+una propuesta de cambio que queda esperando tu visto bueno.
 
-Claude vigila el Pull Request y te avisa si algo falla en las comprobaciones
+Se crea **como borrador** (*draft*), que significa "aún no listo para
+publicar". Para que el cambio llegue a la web, en GitHub tienes que:
+
+1. Pulsar **Ready for review** (quitarle el estado de borrador)
+2. Pulsar **Merge** (incorporarlo)
+
+Hasta ese momento el sitio público no cambia nada.
+
+Claude vigila ese Pull Request y te avisa si algo falla en las comprobaciones
 automáticas.
+
+---
+
+## Pequeño glosario
+
+Cuatro palabras que verás en GitHub y en lo que te escriba Claude:
+
+| Palabra | Qué significa, en corto |
+|---|---|
+| **Repositorio** | La carpeta del proyecto, guardada en GitHub con todo su historial. |
+| **Rama** (*branch*) | Una copia donde se trabaja sin tocar lo que está publicado. `master` es la publicada. |
+| **Fusionar** (*merge*) | Incorporar los cambios de una rama a lo publicado. Es el paso que hace que el sitio cambie. |
+| **Pull Request** | La propuesta de fusionar esos cambios, para revisarla antes. |
 
 ---
 
