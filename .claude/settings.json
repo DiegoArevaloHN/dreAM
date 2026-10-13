@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "BUNDLE_PATH": "vendor/bundle",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "JEKYLL_ENV": "development"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(bundle install:*)",
+      "Bash(bundle exec jekyll build:*)",
+      "Bash(bundle exec jekyll serve:*)",
+      "Bash(bundle exec jekyll -v)",
+      "Bash(bundle exec htmlproofer:*)",
+      "Bash(bundle list:*)",
+      "Bash(bundle -v)",
+      "Bash(script/cibuild)",
+      "Bash(script/screenshots)",
+      "Bash(script/screenshots:*)",
+      "Bash(script/setup)",
+      "Bash(script/server:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm install:*)",
+      "Bash(ruby -v)",
+      "Bash(gem list:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Bash(git ls-files:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(curl -sS http://localhost:4000/*)",
+      "Bash(.claude/hooks/session-start.sh)",
+      "Read(/**)",
+      "Edit(/_posts/**)",
+      "Edit(/_layouts/**)",
+      "Edit(/_includes/**)",
+      "Edit(/_config.yml)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)"
+    ],
+    "deny": [
+      "Read(/.env)",
+      "Read(/.env.*)",
+      "Edit(/Gemfile.lock)",
+      "Edit(/node_modules/**)",
+      "Edit(/_site/**)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push * --force*)",
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh",
+            "timeout": 600
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-slide.py",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

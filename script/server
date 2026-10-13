@@ -1,5 +1,24 @@
 #!/bin/sh
+# Levanta el sitio en local para verlo en el navegador.
+#
+#   script/server                 → http://localhost:4000
+#   script/server --port 4010     → se puede pasar cualquier opción de Jekyll
 
 set -e
 
-bundle exec jekyll serve "$@"
+# Sin este cd, ejecutarlo desde una subcarpeta (p. ej. `cd _posts &&
+# ../script/server`) hace que Jekyll tome esa carpeta como origen y sirva un
+# sitio vacío.
+cd "$(dirname "$0")/.."
+
+BUNDLE_PATH="${BUNDLE_PATH:-vendor/bundle}"
+export BUNDLE_PATH
+
+case "${LC_ALL:-${LANG:-}}" in
+  *UTF-8* | *utf-8* | *UTF8* | *utf8*) ;;
+  *) LANG=C.UTF-8; LC_ALL=C.UTF-8 ;;
+esac
+export LANG LC_ALL
+
+# --host 0.0.0.0 para que también se vea desde fuera del contenedor.
+exec bundle exec jekyll serve --host 0.0.0.0 --port 4000 "$@"

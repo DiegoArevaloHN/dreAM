@@ -1,13 +1,57 @@
-# Your GitHub Learning Lab Repository for Introducing GitHub
+# github-slideshow
 
-Welcome to **your** repository for your GitHub Learning Lab course. This repository will be used during the different activities that I will be guiding you through. See a word you don't understand? We've included an emoji 📖 next to some key terms. Click on it to see its definition.
+Presentación de diapositivas publicada con GitHub Pages: un sitio estático
+generado por **Jekyll** que renderiza las diapositivas con **reveal.js 3.9.2**.
 
-Oh! I haven't introduced myself...
+- Cada diapositiva es un archivo Markdown en [`_posts/`](_posts/).
+- El orden lo da la fecha del nombre del archivo: **la más antigua va primera**.
+- El sitio se publica desde la rama `master`.
 
-I'm the GitHub Learning Lab bot and I'm here to help guide you in your journey to learn and master the various topics covered in this course. I will be using Issue and Pull Request comments to communicate with you. In fact, I already added an issue for you to check out.
+## Si no programas
 
-![issue tab](https://lab.github.com/public/images/issue_tab.png)
+Lee **[GUIA-RAPIDA.md](GUIA-RAPIDA.md)**. Son seis frases que puedes escribirle
+a Claude Code para crear, revisar y publicar diapositivas sin tocar código:
 
-I'll meet you over there, can't wait to get started!
+| Comando | Qué hace |
+|---|---|
+| `/nueva-presentacion <tema>` | Crea una presentación completa desde cero |
+| `/nueva-slide <idea>` | Añade una diapositiva |
+| `/vista-previa` | Muestra una imagen de cada diapositiva |
+| `/verificar` | Comprueba que todo está sano antes de publicar |
+| `/publicar` | Guarda y sube los cambios |
+| `/traducir-deck <idioma>` | Traduce la presentación entera |
 
-This course is using the :sparkles: open source project [reveal.js](https://github.com/hakimel/reveal.js/). In some cases we’ve made changes to the history so it would behave during class, so head to the original project repo to learn more about the cool people behind this project.
+## Si trabajas en el repositorio
+
+```sh
+script/setup        # instala las gemas en vendor/bundle
+script/cibuild      # compila y valida enlaces
+script/screenshots  # genera un PNG por diapositiva en .preview/
+script/server       # servidor local en http://localhost:4000
+```
+
+Una diapositiva es un archivo `_posts/AAAA-MM-DD-slug.md` con este
+encabezado:
+
+```markdown
+---
+layout: slide
+title: "Título de la diapositiva"
+---
+
+Contenido en Markdown. Una idea por diapositiva.
+```
+
+> ⚠️ **Nunca uses una fecha futura.** `_config.yml` tiene `future: false`, así
+> que una diapositiva fechada mañana no se publica **y el build no da ningún
+> error**. Un hook de Claude Code y el CI lo comprueban automáticamente.
+
+Las reglas completas del proyecto están en [CLAUDE.md](CLAUDE.md), y las de
+autoría de diapositivas en
+[`.claude/skills/presentaciones/`](.claude/skills/presentaciones/SKILL.md).
+
+## Créditos
+
+Construido sobre [reveal.js](https://github.com/hakimel/reveal.js) de Hakim El
+Hattab. El repositorio partió de la plantilla `github-slideshow` de GitHub
+Training.

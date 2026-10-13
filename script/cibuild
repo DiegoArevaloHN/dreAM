@@ -1,6 +1,66 @@
 #!/bin/sh
+# Compila el sitio y valida el HTML resultante.
+# Se usa igual en local y en GitHub Actions.
 
 set -e
 
-bundle exec jekyll build --baseurl "."
-htmlproofer _site/index.html --empty-alt-ignore
+cd "$(dirname "$0")/.."
+
+BUNDLE_PATH="${BUNDLE_PATH:-vendor/bundle}"
+export BUNDLE_PATH
+
+# html-proofer lee los HTML con la codificación del sistema. Con un locale que
+# no sea UTF-8 (C, POSIX: lo habitual en cron, contenedores pelados o ssh)
+# lanza Encoding::InvalidByteSequenceError con los acentos del deck, SE SALTA
+# el archivo y aun así termina con éxito. Es decir: diría "todo correcto" sin
+# haber validado nada.
+#
+# No basta con "${LANG:-C.UTF-8}": eso solo actúa si la variable está vacía o
+# sin definir, y el caso peligroso es que venga definida con un valor malo.
+case "${LC_ALL:-${LANG:-}}" in
+  *UTF-8* | *utf-8* | *UTF8* | *utf8*) ;;
+  *) LANG=C.UTF-8; LC_ALL=C.UTF-8 ;;
+esac
+export LANG LC_ALL
+
+echo "==> Compilando con Jekyll..."
+bundle exec jekyll build
+
+echo "==> Validando HTML con html-proofer..."
+# Validamos NUESTRAS páginas. Los HTML de ejemplo que reveal.js trae dentro de
+# node_modules son código de terceros con enlaces roots propios: no podemos
+# arreglarlos y no forman parte de la presentación.
+SALIDA="$(mktemp)"
+trap 'rm -f "$SALIDA"' EXIT
+
+# Sin tubería a propósito: este script corre con /bin/sh (dash), que no tiene
+# PIPESTATUS ni `set -o pipefail`. Con `... | tee`, $? sería el estado de tee
+# —siempre 0— y los fallos de html-proofer pasarían desapercibidos.
+set +e
+bundle exec htmlproofer _site \
+  --root-dir _site \
+  --checks Links,Images,Scripts \
+  --ignore-files "/node_modules/" \
+  --disable-external \
+  --ignore-empty-alt \
+  --allow-hash-href \
+  --no-enforce-https >"$SALIDA" 2>&1
+ESTADO=$?
+set -e
+cat "$SALIDA"
+
+if [ "$ESTADO" -ne 0 ]; then
+  echo "==> html-proofer encontró problemas." >&2
+  exit "$ESTADO"
+fi
+
+# html-proofer también sale con 0 cuando no revisó NINGÚN archivo (por ejemplo
+# si el build no generó nada, o si el locale le impidió leerlos). Sin esta
+# comprobación, "Todo correcto" podría significar "no miré nada".
+if grep -qE '^Ran on 0 files' "$SALIDA"; then
+  echo "==> ERROR: html-proofer no revisó ningún archivo." >&2
+  echo "    El sitio está vacío o no se pudo leer. No se ha validado nada." >&2
+  exit 1
+fi
+
+echo "==> Todo correcto."
